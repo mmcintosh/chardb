@@ -28,7 +28,7 @@ function reportInput() {
             nodeCompatibility: "22.14.0",
             wrangler: "4.125.0",
             miniflare: "4.20260828.0",
-            betterAuth: "1.6.30",
+            betterAuth: "1.7.6",
         },
         identity: { ownerUserId: "user-owner", memberUserId: "user-member" },
         organizations: { shared: { id: "org-shared" }, isolated: { id: "org-isolated" } },

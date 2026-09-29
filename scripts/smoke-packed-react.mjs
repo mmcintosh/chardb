@@ -36,7 +36,7 @@ try {
                 dependencies: {
                     "@chardb/core": `file:${coreTarball}`,
                     "@chardb/react": `file:${reactTarball}`,
-                    "better-auth": "1.6.30",
+                    "better-auth": "1.7.6",
                     "drizzle-orm": "0.45.2",
                     react: "18.3.1",
                     "react-dom": "18.3.1",

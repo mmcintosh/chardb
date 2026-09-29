@@ -175,7 +175,7 @@ describe("generated tutorial flow", () => {
         expect(versionOne).not.toContain("drizzle-orm");
         expect(versionOne).toContain("defineSchemaSnapshot({");
         expect(versionOne).toContain('"format": "chardb.schema-snapshot.v1"');
-        expect(versionOne).toContain('"digest": "0fd0fcf9a9449e01fdeeb9834234b794a8d6b20b8031319aa0734b2ea03481f7"');
+        expect(versionOne).toContain('"digest": "9ac92a1d63ea33ac842f158cac3db77d9f61f96bd51aa1cd38d7424e257b9ec7"');
         expect(versionOne).toContain(".initialMigration");
         expect(JSON.parse(snapshotOne)).toEqual(SCAFFOLD_INITIAL_SNAPSHOT);
         expect(readme).toContain("bunx @chardb/core migrations generate --name add_messages");
