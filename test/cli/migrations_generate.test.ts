@@ -567,7 +567,7 @@ describe("initial migration generation", () => {
         });
         expect(result).toEqual({
             exitCode: 0,
-            stdout: "DurableObject,WorkerEntrypoint",
+            stdout: "DurableObject,WorkerEntrypoint,waitUntil",
             stderr: "",
         });
     });

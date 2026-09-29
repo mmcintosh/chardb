@@ -18,6 +18,8 @@ export class DurableObject {
     this.env = env;
   }
 }
+
+export function waitUntil() {}
 `,
             loader: "js",
         }));
