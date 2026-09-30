@@ -229,7 +229,7 @@ export function renderFileProofPackage(relativeTarball) {
         type: "module",
         scripts: { typecheck: "tsc --noEmit", "deploy:dry": "wrangler deploy --dry-run --outdir worker-dist" },
         dependencies: {
-            "better-auth": "~1.6.30",
+            "better-auth": "~1.7.6",
             "@chardb/core": `file:${normalized.startsWith(".") ? normalized : `./${normalized}`}`,
             "drizzle-orm": "^0.45.2",
             zod: "^4.0.0",

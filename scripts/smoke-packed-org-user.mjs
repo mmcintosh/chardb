@@ -25,7 +25,7 @@ try {
                 type: "module",
                 dependencies: {
                     "@chardb/core": `file:${tarballPath}`,
-                    "better-auth": "1.6.30",
+                    "better-auth": "1.7.6",
                     "drizzle-orm": "0.45.2",
                     typescript: "5.6.3",
                     zod: "4.0.0",

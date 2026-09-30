@@ -76,7 +76,7 @@ function assertRuntime(runtime) {
         !RUNTIME_VERSION.test(runtime.nodeCompatibility ?? "") ||
         !RUNTIME_VERSION.test(runtime.wrangler ?? "") ||
         !RUNTIME_VERSION.test(runtime.miniflare ?? "") ||
-        runtime.betterAuth !== "1.6.30"
+        runtime.betterAuth !== "1.7.6"
     ) {
         throw new Error("packed-chat runtime provenance is invalid");
     }
