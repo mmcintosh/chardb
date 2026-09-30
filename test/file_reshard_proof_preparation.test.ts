@@ -68,7 +68,7 @@ async function writeInstalledCandidate(app: string): Promise<void> {
     };
     for (const [name, version] of Object.entries({
         "@noble/hashes": "1.8.0",
-        "better-auth": "1.6.30",
+        "better-auth": "1.7.6",
         "drizzle-orm": "0.45.2",
         zod: "4.4.3",
         "@cloudflare/workers-types": "5.20260830.1",

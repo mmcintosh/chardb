@@ -100,7 +100,7 @@ const DEPLOYMENT_FILES = Object.freeze(
 );
 const ROOT_DEPENDENCIES = Object.freeze({
     "@noble/hashes": "1.8.0",
-    "better-auth": "1.6.30",
+    "better-auth": "1.7.6",
     "@chardb/core": "file:./chardb-proof.tgz",
     "drizzle-orm": "0.45.2",
     zod: "4.4.3",

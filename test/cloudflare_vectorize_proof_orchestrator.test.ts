@@ -261,7 +261,7 @@ function packageLock(): Record<string, unknown> {
                 devDependencies: manifest.devDependencies,
             },
             "node_modules/@noble/hashes": { version: "1.8.0" },
-            "node_modules/better-auth": { version: "1.6.30" },
+            "node_modules/better-auth": { version: "1.7.6" },
             "node_modules/@cloudflare/workers-types": { version: "5.20260830.1" },
             "node_modules/@chardb/core": { version: "0.1.0", resolved: "file:chardb-proof.tgz" },
             "node_modules/drizzle-orm": { version: "0.45.2" },
@@ -700,7 +700,7 @@ describe("Cloudflare Vectorize proof preparation", () => {
             private: true,
             dependencies: {
                 "@noble/hashes": "1.8.0",
-                "better-auth": "1.6.30",
+                "better-auth": "1.7.6",
                 "@chardb/core": "file:./chardb-proof.tgz",
                 "drizzle-orm": "0.45.2",
                 zod: "4.4.3",

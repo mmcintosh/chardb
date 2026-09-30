@@ -184,7 +184,7 @@ async function writeFixture(cwd, packageTarball, reactPackageTarball) {
                 private: true,
                 type: "module",
                 dependencies: {
-                    "better-auth": "1.6.30",
+                    "better-auth": "1.7.6",
                     "@chardb/core": `file:${packageTarball}`,
                     "@chardb/react": `file:${reactPackageTarball}`,
                     "drizzle-orm": "0.45.2",

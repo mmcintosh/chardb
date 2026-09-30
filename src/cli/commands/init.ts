@@ -45,7 +45,7 @@ const PACKAGE_TEMPLATE = (name: string, corePackage: string, reactPackage: strin
                 deploy: "bun scripts/deploy.mjs",
             },
             dependencies: {
-                "better-auth": "1.6.30",
+                "better-auth": "1.7.6",
                 "@chardb/core": corePackage,
                 "@chardb/react": reactPackage,
                 "drizzle-orm": "0.45.2",

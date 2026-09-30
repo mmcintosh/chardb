@@ -92,7 +92,7 @@
     },
     "peerDependencies": {
         "drizzle-orm": ">=0.36.0",
-        "better-auth": "~1.6.30"
+        "better-auth": "~1.7.6"
     },
     "peerDependenciesMeta": {
         "better-auth": {
@@ -112,7 +112,7 @@
         "@types/bun": "^1.1.13",
         "@types/react": "^18.3.12",
         "@types/react-test-renderer": "^18.3.0",
-        "better-auth": "~1.6.30",
+        "better-auth": "~1.7.6",
         "drizzle-orm": "^0.45.2",
         "drizzle-zod": "0.8.3",
         "miniflare": "^4.20260730.0",
