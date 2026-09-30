@@ -7,6 +7,7 @@
  * Wrangler, so the Worker module can export them with one destructuring line.
  */
 
+import { waitUntil } from "cloudflare:workers";
 import { type Auth, type BetterAuthOptions, type BetterAuthPlugin, betterAuth } from "better-auth";
 import { Hono } from "hono";
 import { type ChardbAuthAdapterEnv, chardbAuthAdapter } from "../auth/chardb_adapter.ts";
@@ -340,6 +341,12 @@ function buildDefaultAuthRuntime<TPlugins extends readonly BetterAuthPlugin[]>(
                         // canonical request origin instead of trusting an arbitrary
                         // Host header or forcing a wildcard allow-list.
                         ...(authOptions.baseURL === undefined ? { baseURL: requestOrigin } : {}),
+                        // Better Auth and its plugins finish some work after the response; the
+                        // Workers runtime cancels it unless it runs under waitUntil.
+                        advanced: {
+                            ...authOptions.advanced,
+                            backgroundTasks: authOptions.advanced?.backgroundTasks ?? { handler: waitUntil },
+                        },
                         database: chardbAuthAdapter({
                             env: env as unknown as ChardbAuthAdapterEnv,
                             recoveryGeneration: () => catalogAuthAdmission(env, expectedVersion),

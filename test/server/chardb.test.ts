@@ -16,6 +16,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
+import * as workers from "cloudflare:workers";
 import { admin } from "better-auth/plugins/admin";
 import { jwt } from "better-auth/plugins/jwt";
 import { organization } from "better-auth/plugins/organization";
@@ -308,6 +309,32 @@ describe("chardb({…})", () => {
         const deployed = await app.fetch(new Request("https://app.example/auth-origin"), env, ctx);
         expect((await local.json()) as unknown).toEqual({ baseURL: "http://127.0.0.1:8787" });
         expect((await deployed.json()) as unknown).toEqual({ baseURL: "https://app.example" });
+    });
+
+    test("keeps Better Auth's background work alive with waitUntil unless the app handles it", async () => {
+        const { waitUntilCalls } = workers as unknown as { waitUntilCalls: Promise<unknown>[] };
+        const env = requestEnv() as Parameters<ReturnType<typeof chardb>["fetch"]>[1];
+        const ctx = { waitUntil() {}, passThroughOnException() {}, props: undefined } as Parameters<
+            ReturnType<typeof chardb>["fetch"]
+        >[2];
+        const run = async (options: Parameters<typeof defineAuth>[0], work: Promise<unknown>) => {
+            const app = chardb({ ownership: "user", auth: defineAuth(options), schema: {} });
+            app.get("/background", c => {
+                c.var.auth.options.advanced?.backgroundTasks?.handler(work);
+                return c.body(null, 204);
+            });
+            expect((await app.fetch(new Request("https://app.example/background"), env, ctx)).status).toBe(204);
+        };
+
+        const defaulted = Promise.resolve("defaulted");
+        await run({}, defaulted);
+        expect(waitUntilCalls).toContain(defaulted);
+
+        const handled: Promise<unknown>[] = [];
+        const own = Promise.resolve("own");
+        await run({ advanced: { backgroundTasks: { handler: p => void handled.push(p) } } }, own);
+        expect(handled).toEqual([own]);
+        expect(waitUntilCalls).not.toContain(own);
     });
 
     test("binds the typed Better Auth runtime to Hono routes and caches it per env", async () => {
