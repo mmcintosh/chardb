@@ -1,39 +1,25 @@
-import { forOrg } from "@chardb/core/server";
-import { defineAuth, defineSchemaBaseline } from "@chardb/core/server";
-import { anonymous } from "better-auth/plugins/anonymous";
-import { jwt } from "better-auth/plugins/jwt";
-import { organization } from "better-auth/plugins/organization";
-import { integer, text } from "drizzle-orm/sqlite-core";
-
-// This is the deployed version-one schema, not the current application schema.
-// Keep it unchanged and append later migrations in worker.ts.
-const authV1 = defineAuth({ plugins: [anonymous(), organization(), jwt()] });
-const { cdbTable } = forOrg(authV1);
-
-const messagesV1 = cdbTable(
-    "messages",
-    {
-        id: text("id").primaryKey(),
-        authorId: text("author_id")
-            .notNull()
-            .references(() => authV1.user.id, { onDelete: "cascade" }),
-        body: text("body").notNull(),
-        createdAt: integer("created_at").notNull(),
-    },
-    {
-        selfBy: "authorId",
-        roles: {
-            owner: "*",
-            admin: "*",
-            member: { create: ["id", "body", "createdAt"], read: "*" },
-            self: { update: ["body"], delete: true },
-        },
-    }
-);
-
-export const initialSchema = defineSchemaBaseline({
+export const initialSchema = Object.freeze({
     version: 1,
     name: "initial_schema",
-    domainSchema: { messages: messagesV1 },
-    authOptions: authV1.options,
+    statements: [
+        'CREATE TABLE "messages" ("id" text PRIMARY KEY NOT NULL, "organization_id" text NOT NULL, "author_id" text NOT NULL, "body" text NOT NULL, "created_at" integer NOT NULL)',
+    ],
+    catalogStatements: [
+        'CREATE TABLE "user" ("id" text PRIMARY KEY NOT NULL, "name" text NOT NULL, "email" text NOT NULL CONSTRAINT "user_email_unique" UNIQUE, "emailVerified" integer NOT NULL DEFAULT 0, "image" text, "createdAt" integer NOT NULL DEFAULT (unixepoch() * 1000), "updatedAt" integer NOT NULL DEFAULT (unixepoch() * 1000), "isAnonymous" integer DEFAULT 0)',
+        'CREATE TABLE "session" ("id" text PRIMARY KEY NOT NULL, "expiresAt" integer NOT NULL, "token" text NOT NULL CONSTRAINT "session_token_unique" UNIQUE, "createdAt" integer NOT NULL DEFAULT (unixepoch() * 1000), "updatedAt" integer NOT NULL, "ipAddress" text, "userAgent" text, "userId" text NOT NULL, "activeOrganizationId" text, CONSTRAINT "session_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "user" ("id") ON DELETE CASCADE)',
+        'CREATE INDEX "session_userId_idx" ON "session" ("userId")',
+        'CREATE TABLE "account" ("id" text PRIMARY KEY NOT NULL, "accountId" text NOT NULL, "providerId" text NOT NULL, "userId" text NOT NULL, "accessToken" text, "refreshToken" text, "idToken" text, "accessTokenExpiresAt" integer, "refreshTokenExpiresAt" integer, "scope" text, "password" text, "createdAt" integer NOT NULL DEFAULT (unixepoch() * 1000), "updatedAt" integer NOT NULL, CONSTRAINT "account_providerId_accountId_unique" UNIQUE ("providerId", "accountId"), CONSTRAINT "account_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "user" ("id") ON DELETE CASCADE)',
+        'CREATE INDEX "account_userId_idx" ON "account" ("userId")',
+        'CREATE TABLE "verification" ("id" text PRIMARY KEY NOT NULL, "identifier" text NOT NULL, "value" text NOT NULL, "expiresAt" integer NOT NULL, "createdAt" integer NOT NULL DEFAULT (unixepoch() * 1000), "updatedAt" integer NOT NULL DEFAULT (unixepoch() * 1000))',
+        'CREATE INDEX "verification_identifier_idx" ON "verification" ("identifier")',
+        'CREATE TABLE "invitation" ("id" text PRIMARY KEY NOT NULL, "organizationId" text NOT NULL, "email" text NOT NULL, "role" text, "status" text NOT NULL DEFAULT \'pending\', "expiresAt" integer NOT NULL, "createdAt" integer NOT NULL DEFAULT (unixepoch() * 1000), "inviterId" text NOT NULL, CONSTRAINT "invitation_organizationId_organization_id_fk" FOREIGN KEY ("organizationId") REFERENCES "organization" ("id"), CONSTRAINT "invitation_inviterId_user_id_fk" FOREIGN KEY ("inviterId") REFERENCES "user" ("id"))',
+        'CREATE INDEX "invitation_organizationId_idx" ON "invitation" ("organizationId")',
+        'CREATE INDEX "invitation_email_idx" ON "invitation" ("email")',
+        'CREATE TABLE "jwks" ("id" text PRIMARY KEY NOT NULL, "publicKey" text NOT NULL, "privateKey" text NOT NULL, "createdAt" integer NOT NULL, "expiresAt" integer)',
+        'CREATE TABLE "member" ("id" text PRIMARY KEY NOT NULL, "organizationId" text NOT NULL, "userId" text NOT NULL, "role" text NOT NULL DEFAULT \'member\', "createdAt" integer NOT NULL, CONSTRAINT "member_organizationId_userId_unique" UNIQUE ("organizationId", "userId"), CONSTRAINT "member_organizationId_organization_id_fk" FOREIGN KEY ("organizationId") REFERENCES "organization" ("id"), CONSTRAINT "member_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "user" ("id"))',
+        'CREATE INDEX "member_organizationId_idx" ON "member" ("organizationId")',
+        'CREATE INDEX "member_userId_idx" ON "member" ("userId")',
+        'CREATE TABLE "organization" ("id" text PRIMARY KEY NOT NULL, "name" text NOT NULL, "slug" text NOT NULL CONSTRAINT "organization_slug_unique" UNIQUE, "logo" text, "createdAt" integer NOT NULL, "metadata" text)',
+        'CREATE INDEX "organization_slug_idx" ON "organization" ("slug")',
+    ],
 });

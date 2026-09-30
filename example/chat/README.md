@@ -9,13 +9,14 @@ src/server/auth.ts       Better Auth organization, anonymous, and JWT plugins
 src/server/schema.ts     one forOrg(auth) table
 src/server/api.ts        postMessage, editMessage, deleteMessage
 src/server/queries.ts    listMessages live query
-src/server/migrations/v1.ts  immutable deployed version-one schema snapshot
+src/server/migrations/v1.ts  immutable deployed version-one SQL
+src/server/migrations/v2.ts  Better Auth 1.7's JWT key columns
 src/server/migrations.ts     append-only migration journal
 src/server/worker.ts         chardb() and HTTP routes
 src/web/App.tsx          Better Auth organization controls, live list, and message form
 ```
 
-Do not edit `src/server/migrations/v1.ts` after a deployment reaches version one. Change the current schema in `src/server/schema.ts`, then append a versioned SQL entry to `src/server/migrations.ts`. Keeping the deployed snapshot separate prevents a later schema edit from changing the version-one digest.
+Do not edit `src/server/migrations/v1.ts` after a deployment reaches version one. Change the current schema in `src/server/schema.ts`, then append a versioned SQL entry to `src/server/migrations.ts`. Version one is stored as SQL, not generated from the current code, so neither a later schema edit nor a dependency upgrade can change its digest. When an upgrade adds auth columns, add a migration for them; the migration test compares the journal with the current schema.
 
 `worker.ts` also exposes a direct read at `GET /api/messages?organizationId=<active-id>`. It uses the same schema and query compiler as the registered live handle:
 

@@ -3,11 +3,14 @@ import { describe, expect, test } from "bun:test";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { CdbError } from "@chardb/core";
+import { defineMigrations, defineSchemaBaseline } from "@chardb/core/server";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import { deleteMessage, editMessage, postMessage } from "../../src/server/api.ts";
 import { auth } from "../../src/server/auth.ts";
+import { migrations } from "../../src/server/migrations.ts";
 import { initialSchema } from "../../src/server/migrations/v1.ts";
 import { listMessages } from "../../src/server/queries.ts";
+import * as schema from "../../src/server/schema.ts";
 import { messages } from "../../src/server/schema.ts";
 
 describe("tutorial Better Auth integration", () => {
@@ -48,11 +51,10 @@ describe("tutorial Better Auth integration", () => {
 
     test("uses the React client and native organization workflow", async () => {
         const root = resolve(import.meta.dir, "../..");
-        const [app, authSource, schema, versionOne, worker, wrangler, vite] = await Promise.all([
+        const [app, authSource, schemaSource, worker, wrangler, vite] = await Promise.all([
             readFile(resolve(root, "src/web/App.tsx"), "utf8"),
             readFile(resolve(root, "src/server/auth.ts"), "utf8"),
             readFile(resolve(root, "src/server/schema.ts"), "utf8"),
-            readFile(resolve(root, "src/server/migrations/v1.ts"), "utf8"),
             readFile(resolve(root, "src/server/worker.ts"), "utf8"),
             readFile(resolve(root, "wrangler.template.toml"), "utf8"),
             readFile(resolve(root, "vite.config.ts"), "utf8"),
@@ -82,9 +84,7 @@ describe("tutorial Better Auth integration", () => {
         expect(app).not.toContain("useSession.subscribe(");
         expect(authSource).not.toContain("DBAdapter");
         expect(authSource).not.toContain("databaseHooks");
-        expect(schema).toContain('owner: "*"');
-        expect(versionOne).toContain("plugins: [anonymous(), organization(), jwt()]");
-        expect(versionOne).toContain('owner: "*"');
+        expect(schemaSource).toContain('owner: "*"');
         expect(worker).toContain('authBasePath: "/api/auth"');
         expect(worker).toContain("{ DB, Catalog, Cdb, Gateway, Resharder }");
         expect(wrangler).toContain('new_sqlite_classes = ["Cdb", "Catalog", "Gateway", "Resharder"]');
@@ -97,6 +97,61 @@ describe("tutorial Better Auth integration", () => {
         expect(wrangler).toContain('run_worker_first = ["/ws", "/_chardb/*", "/api/*", "/health"]');
         expect(vite).toContain('const workerOrigin = process.env.CHARDB_URL ?? "http://127.0.0.1:8787"');
         expect(vite).not.toContain("localhost:8787");
+    });
+});
+
+describe("tutorial migrations", () => {
+    const tablesAfter = (
+        steps: readonly { statements: readonly string[]; catalogStatements?: readonly string[] }[]
+    ) => {
+        const sqlite = new Database(":memory:");
+        try {
+            for (const step of steps)
+                for (const sql of [...step.statements, ...(step.catalogStatements ?? [])]) sqlite.run(sql);
+            const tables = sqlite
+                .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
+                .all();
+            const rows = (sql: string, table: string) => sqlite.query(sql).all(table);
+            return Object.fromEntries(
+                tables.map(({ name }) => [
+                    name,
+                    {
+                        columns: rows(
+                            `SELECT name, type, "notnull", dflt_value, pk FROM pragma_table_info(?) ORDER BY name`,
+                            name
+                        ),
+                        indexes: rows(
+                            `SELECT l.name, l."unique", l.origin, group_concat(i.name) AS columns
+                             FROM pragma_index_list(?) AS l, pragma_index_info(l.name) AS i
+                             GROUP BY l.name ORDER BY l.name`,
+                            name
+                        ),
+                        foreignKeys: rows(
+                            `SELECT "table", "from", "to", on_delete FROM pragma_foreign_key_list(?) ORDER BY "from"`,
+                            name
+                        ),
+                    },
+                ])
+            );
+        } finally {
+            sqlite.close();
+        }
+    };
+
+    test("keeps the deployed version-one digest", () => {
+        expect(defineMigrations([initialSchema]).migrations[0]?.digest).toBe(
+            "2e6bcbd11c4cee1f410d1e350223b8ae5e92b4c44696f9727eedc2c6253629b8"
+        );
+    });
+
+    test("ends at the tables the current auth and domain schema declare", () => {
+        const current = defineSchemaBaseline({
+            version: 1,
+            name: "current",
+            domainSchema: schema,
+            authOptions: auth.options,
+        });
+        expect(tablesAfter(migrations.migrations)).toEqual(tablesAfter([current]));
     });
 });
 

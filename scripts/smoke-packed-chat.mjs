@@ -233,7 +233,7 @@ async function migrate(consumer, origin) {
             "--id",
             "packed-chat-initial-schema",
             "--target",
-            "1",
+            "2",
             "--concurrency",
             "2",
         ],
@@ -250,7 +250,7 @@ async function migrate(consumer, origin) {
         `packed migration failed (status ${result.status}, signal ${result.signal}, timed out ${result.timedOut})\n${result.stdout}${result.stderr}`
     );
     assert(
-        result.stdout.includes("schema version 1 active at epoch 2"),
+        result.stdout.includes("schema version 2 active at epoch 2"),
         `packed migration output drifted: ${result.stdout}`
     );
 }
