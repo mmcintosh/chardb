@@ -391,6 +391,10 @@ async function readPhaseControl() {
     }
     const actualFingerprint = await fingerprintFile(control.tarballPath);
     assert(sameFingerprint(actualFingerprint, control.tarball), "packed-chat phase tarball identity changed");
+    assert(
+        ["better-auth-1.6", "better-auth-1.7"].includes(control.workerVars?.CHAT_SCHEMA_HISTORY),
+        "packed-chat phase lacks the configured schema history"
+    );
     return control;
 }
 
@@ -399,6 +403,7 @@ async function startPhaseMiniflare(control) {
         modules: true,
         script: await readFile(control.workerPath, "utf8"),
         bindings: {
+            ...control.workerVars,
             BETTER_AUTH_SECRET: "packed-chat-secret-that-is-at-least-32-characters",
             CDB_ADMIN_TOKEN: ADMIN_TOKEN,
         },
@@ -802,6 +807,7 @@ async function main() {
         assert(files.has("wrangler.toml") && !files.has("wrangler.jsonc"), "packed consumer must use wrangler.toml");
 
         const packageJson = JSON.parse(await readFile(join(CHAT, "package.json"), "utf8"));
+        packageJson.dependencies["better-auth"] = "1.7.6";
         packageJson.dependencies["@chardb/core"] = `file:${tarball}`;
         packageJson.dependencies["@chardb/react"] = `file:${reactTarball}`;
         await writeFile(join(consumer, "package.json"), `${JSON.stringify(packageJson, null, 4)}\n`);
@@ -840,6 +846,7 @@ async function main() {
         const workerPath = join(scratch, "chat-worker.mjs");
         await writeFile(workerPath, await bundleWorker(consumer, workerPath));
         const tarballFingerprint = await fingerprintFile(tarball);
+        const workerVars = Bun.TOML.parse(await readFile(join(consumer, "wrangler.toml"), "utf8")).vars;
         const controlPath = join(scratch, "phase-control.json");
         const handoffPath = join(scratch, "restart-handoff.json");
         const resultPath = join(scratch, "restart-result.json");
@@ -847,6 +854,7 @@ async function main() {
             schema: PHASE_CONTROL_SCHEMA,
             consumer,
             workerPath,
+            workerVars,
             persistencePath: join(scratch, "durable-objects"),
             handoffPath,
             resultPath,
